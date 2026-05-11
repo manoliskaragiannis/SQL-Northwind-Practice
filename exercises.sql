@@ -41,6 +41,12 @@ LEFT JOIN [Order Details] AS O
 GROUP BY P.ProductName
 ORDER BY MONEY DESC;
 
+SELECT OrderID , OrderDate
+FROM Orders
+WHERE OrderDate > '1998-06-01'
+ORDER BY OrderDate;
+
+
 
 
 
