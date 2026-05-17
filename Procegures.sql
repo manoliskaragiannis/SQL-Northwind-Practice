@@ -144,7 +144,7 @@ BEGIN
     BEGIN
         INSERT INTO Employees (FirstName,LastName,ReportsTo)
                     VALUES (@FirstName,@LastName,@ManagerID);
-        SELECT 'Employee added successfully' AS Message
+        SELECT 'Employee added successfully' AS Mesage
     END
     ELSE
     BEGIN
@@ -165,3 +165,74 @@ BEGIN
 
 END;
 GO
+
+
+
+CREATE PROCEDURE sp_GetOrderShippingTime
+    @OrdID int , @DaysToShip int OUTPUT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM Orders WHERE ShippedDate IS NOT NULL AND OrderID = @OrdID)
+        BEGIN
+            SELECT @DaysToShip = DATEDIFF(day, OrderDate, ShippedDate)
+            FROM Orders
+            WHERE OrderID = @OrdID;
+        END
+    ELSE
+        BEGIN
+            SET @DaysToShip = -1;
+        END
+  END
+
+GO
+CREATE PROCEDURE sp_InsertUniqueSupplier
+    @CompanysName nvarchar(40), @CompCountry nvarchar(20)
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM Suppliers WHERE CompanyName = @CompanysName AND Country = @CompCountry)
+        BEGIN
+            SELECT 'The Company Already exists' AS Message
+        END
+        ELSE
+        BEGIN
+            INSERT INTO Suppliers (CompanyName,Country) 
+            VALUES (@CompanysName,@CompCountry)
+            SELECT 'The company has been addded to the Data Base' AS message
+        END
+END
+
+GO
+-- 5. Αξιολόγηση Πελάτη βάσει του συνολικού του τζίρου
+CREATE PROCEDURE sp_EvaluateCustomerStatus
+    @CustID nchar(5)
+AS
+BEGIN
+    DECLARE @TotalRevenue money;
+    SELECT @TotalRevenue = SUM(OD.UnitPrice * OD.Quantity)
+    FROM Orders AS O
+    JOIN [Order Details] AS OD ON O.OrderID = OD.OrderID
+    WHERE O.CustomerID = @CustID;
+    SET @TotalRevenue = ISNULL(@TotalRevenue, 0);
+    IF @TotalRevenue > 50000
+    BEGIN
+        SELECT 'VIP Customer' AS CustomerStatus, @TotalRevenue AS TotalSpent;
+    END
+    ELSE IF @TotalRevenue >= 10000 AND @TotalRevenue <= 50000
+    BEGIN
+        SELECT 'Regular Customer' AS CustomerStatus, @TotalRevenue AS TotalSpent;
+    END
+    ELSE
+    BEGIN
+        SELECT 'Low Volume Customer' AS CustomerStatus, @TotalRevenue AS TotalSpent;
+    END
+END;
+GO     
+            
+            
+
+
+
+
+
+
+
