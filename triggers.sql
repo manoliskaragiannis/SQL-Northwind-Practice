@@ -25,6 +25,13 @@ CREATE TABLE ProductNameLog (
     NewName nvarchar(40),
     ChangeDate datetime DEFAULT GETDATE()
 );
+CREATE TABLE EmployeeTitleLog (
+    LogID int IDENTITY(1,1) PRIMARY KEY,
+    EmployeeID int,
+    OldTitle nvarchar(30),
+    NewTitle nvarchar(30),
+    ChangeDate datetime DEFAULT GETDATE()
+);
 GO-- 1. Αυτόματη επιστροφή αποθέματος όταν διαγράφεται μια γραμμή παραγγελίας
 CREATE TRIGGER tr_RestoreStockOnDelete
 ON [Order Details]
@@ -168,10 +175,34 @@ BEGIN
         FROM inserted AS i
         JOIN deleted as d ON i.ProductID = d.ProductID
 END;
+GO
 
+CREATE TRIGGER tr_EmployeeTitleChange
+ON Employees
+AFTER UPDATE
+AS
+BEGIN
+    INSERT INTO EmployeeTitleLog (EmployeeID,OldTitle,NewTitle)
+    SELECT
+        i.EmployeeID,
+        d.Title,
+        i.Title
+        FROM inserted AS i 
+        JOIN deleted AS d ON i.EmployeeID = d.EmployeeID
+END;
+GO
 
-
-
+CREATE TRIGGER tr_BlockNegativeStorange
+ON Products
+AFTER UPDATE
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM inserted WHERE UnitsInStock  < 0 )
+    BEGIN
+        RAISERROR('Το αποθεμα δεν μπορει να γινει αρνητικο',16,1)
+        ROLLBACK TRANSACTION
+    END;
+END;
 
 
 
